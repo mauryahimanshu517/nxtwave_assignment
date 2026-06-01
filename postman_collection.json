@@ -1,0 +1,224 @@
+{
+  "info": {
+    "name": "Team Task Tracker API",
+    "description": "End-to-end requests for the Team Task Tracker API. Walk top-to-bottom and Postman will auto-capture tokens & ids into collection variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",      "value": "http://localhost:3000" },
+    { "key": "accessToken",  "value": "" },
+    { "key": "refreshToken", "value": "" },
+    { "key": "organizationId", "value": "" },
+    { "key": "projectId",      "value": "" },
+    { "key": "taskId",         "value": "" },
+    { "key": "userId",         "value": "" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register (creates new org + ADMIN)",
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "const j = pm.response.json();",
+              "pm.collectionVariables.set('accessToken', j.accessToken);",
+              "pm.collectionVariables.set('refreshToken', j.refreshToken);",
+              "pm.collectionVariables.set('organizationId', j.user.organizationId);",
+              "pm.collectionVariables.set('userId', j.user.id);"
+            ]}
+          }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"organizationName\": \"Acme Inc.\",\n  \"name\": \"Ada Admin\",\n  \"email\": \"admin@acme.test\",\n  \"password\": \"Password123!\"\n}" },
+            "url": "{{baseUrl}}/api/auth/register"
+          }
+        },
+        {
+          "name": "Login",
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "const j = pm.response.json();",
+              "pm.collectionVariables.set('accessToken', j.accessToken);",
+              "pm.collectionVariables.set('refreshToken', j.refreshToken);"
+            ]}
+          }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@acme.test\",\n  \"password\": \"Password123!\"\n}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "Refresh tokens (rotation)",
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "const j = pm.response.json();",
+              "pm.collectionVariables.set('accessToken', j.accessToken);",
+              "pm.collectionVariables.set('refreshToken', j.refreshToken);"
+            ]}
+          }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}" },
+            "url": "{{baseUrl}}/api/auth/refresh"
+          }
+        },
+        {
+          "name": "Logout (revoke refresh token)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}" },
+            "url": "{{baseUrl}}/api/auth/logout"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "List org users",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/users" }
+        },
+        {
+          "name": "Add user to org (ADMIN-only)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Marco Manager\",\n  \"email\": \"manager@acme.test\",\n  \"password\": \"Password123!\",\n  \"role\": \"MANAGER\"\n}" },
+            "url": "{{baseUrl}}/api/users"
+          }
+        },
+        {
+          "name": "Update user role",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"role\": \"MANAGER\"\n}" },
+            "url": "{{baseUrl}}/api/users/{{userId}}/role"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "item": [
+        {
+          "name": "Create project",
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.collectionVariables.set('projectId', pm.response.json().id);"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Mobile App\",\n  \"description\": \"Cross-platform mobile app\"\n}" },
+            "url": "{{baseUrl}}/api/projects"
+          }
+        },
+        { "name": "List projects",  "request": { "method": "GET",    "url": "{{baseUrl}}/api/projects" } },
+        { "name": "Get project",    "request": { "method": "GET",    "url": "{{baseUrl}}/api/projects/{{projectId}}" } },
+        {
+          "name": "Update project",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"description\": \"Updated\"\n}" },
+            "url": "{{baseUrl}}/api/projects/{{projectId}}"
+          }
+        },
+        { "name": "Delete project", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/projects/{{projectId}}" } }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "item": [
+        {
+          "name": "Create task",
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "pm.collectionVariables.set('taskId', pm.response.json().id);"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"title\": \"Wire up Redis\",\n  \"description\": \"Use ioredis client\",\n  \"priority\": \"HIGH\",\n  \"assigneeId\": \"{{userId}}\",\n  \"dueDate\": \"2030-12-31T00:00:00.000Z\"\n}" },
+            "url": "{{baseUrl}}/api/tasks"
+          }
+        },
+        {
+          "name": "List tasks (filtered)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks?status=TODO&priority=HIGH&page=1&limit=20&sortBy=dueDate&sortOrder=asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks"],
+              "query": [
+                { "key": "status",    "value": "TODO" },
+                { "key": "priority",  "value": "HIGH" },
+                { "key": "page",      "value": "1" },
+                { "key": "limit",     "value": "20" },
+                { "key": "sortBy",    "value": "dueDate" },
+                { "key": "sortOrder", "value": "asc" }
+              ]
+            }
+          }
+        },
+        { "name": "Get task",    "request": { "method": "GET",    "url": "{{baseUrl}}/api/tasks/{{taskId}}" } },
+        {
+          "name": "Update task",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"priority\": \"MEDIUM\"\n}" },
+            "url": "{{baseUrl}}/api/tasks/{{taskId}}"
+          }
+        },
+        {
+          "name": "Transition status (TODO -> IN_PROGRESS)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"IN_PROGRESS\"\n}" },
+            "url": "{{baseUrl}}/api/tasks/{{taskId}}/status"
+          }
+        },
+        { "name": "Delete task", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/tasks/{{taskId}}" } }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        { "name": "Task analytics", "request": { "method": "GET", "url": "{{baseUrl}}/api/analytics/tasks" } }
+      ]
+    },
+    {
+      "name": "Meta",
+      "item": [
+        { "name": "Health", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{baseUrl}}/health" } },
+        { "name": "Swagger JSON", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{baseUrl}}/api-docs.json" } }
+      ]
+    }
+  ]
+}
